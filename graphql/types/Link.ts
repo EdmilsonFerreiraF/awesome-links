@@ -1,9 +1,34 @@
 // /graphql/types/Link.ts
+import { objectType, extendType, stringArg, intArg } from 'nexus'
+import { User } from './User'
 
-import { extendType, intArg, stringArg } from "nexus"
+export const Link = objectType({
+  name: 'Link',
+  definition(t) {
+    t.string('id')
+    t.string('title')
+    t.string('url')
+    t.string('description')
+    t.string('imageUrl')
+    t.string('category')
+    t.list.field('users', {
+      type: User,
+      async resolve(parent, _args, ctx) {
+        return await ctx.prisma.link
+          .findUnique({
+            where: {
+              id: parent.id,
+            },
+          })
+          .users()
+      },
+    })
+  },
+})
 
+// /graphql/types/Link.ts
 // get ALl Links
-export const Link = extendType({
+export const LinksQuery = extendType({
   type: 'Query',
   definition(t) {
     t.field('links', {
@@ -45,7 +70,7 @@ export const Link = extendType({
               id: myCursor,
             },
             orderBy: {
-              title: 'asc',
+              id: 'asc'
             },
           })
           // return response
@@ -71,6 +96,37 @@ export const Link = extendType({
           edges: [],
         }
       },
+    })
+  },
+})
+
+// /graphql/types/Link.ts
+// code above unchanged
+
+export const Edge = objectType({
+  name: 'Edge',
+  definition(t) {
+    t.string('cursor')
+    t.field('node', {
+      type: Link,
+    })
+  },
+})
+
+export const PageInfo = objectType({
+  name: 'PageInfo',
+  definition(t) {
+    t.string('endCursor')
+    t.boolean('hasNextPage')
+  },
+})
+
+export const Response = objectType({
+  name: 'Response',
+  definition(t) {
+    t.field('pageInfo', { type: PageInfo })
+    t.list.field('edges', {
+      type: Edge,
     })
   },
 })
