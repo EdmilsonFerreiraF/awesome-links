@@ -1,5 +1,4 @@
-// /graphql/types/Link.ts
-import { objectType, extendType, stringArg, intArg } from 'nexus'
+import { objectType, extendType, stringArg, intArg, nonNull } from 'nexus'
 import { User } from './User'
 
 export const Link = objectType({
@@ -26,8 +25,7 @@ export const Link = objectType({
   },
 })
 
-// /graphql/types/Link.ts
-// get ALl Links
+// get All Links
 export const LinksQuery = extendType({
   type: 'Query',
   definition(t) {
@@ -100,8 +98,39 @@ export const LinksQuery = extendType({
   },
 })
 
-// /graphql/types/Link.ts
-// code above unchanged
+export const CreateLinkMutation = extendType({
+  type: 'Mutation',
+  definition(t) {
+    t.nonNull.field('createLink', {
+      type: Link,
+      args: {
+        title: nonNull(stringArg()),
+        url: nonNull(stringArg()),
+        imageUrl: nonNull(stringArg()),
+        category: nonNull(stringArg()),
+        description: nonNull(stringArg()),
+      },
+      async resolve(_parent, args, ctx) {
+
+        if (!ctx.user) {
+          throw new Error(`You need to be logged in to perform an action`)
+        }
+
+        const newLink = {
+          title: args.title,
+          url: args.url,
+          imageUrl: args.imageUrl,
+          category: args.category,
+          description: args.description,
+        }
+
+        return await ctx.prisma.link.create({
+          data: newLink,
+        })
+      },
+    })
+  },
+})
 
 export const Edge = objectType({
   name: 'Edge',
