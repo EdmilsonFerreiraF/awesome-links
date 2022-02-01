@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import toast, { Toaster } from 'react-hot-toast'
 import { gql, useMutation } from '@apollo/client'
 import { getSession } from '@auth0/nextjs-auth0'
+import prisma from '../lib/prisma'
 
 const CreateLinkMutation = gql`
   mutation($title: String!, $url: String!, $imageUrl: String!, $category: String!, $description: String!) {
@@ -120,20 +121,41 @@ const Admin = () => {
 
 export default Admin
 
+// pages/admin.tsx
 export const getServerSideProps = async ({ req, res }) => {
-  const session = getSession(req, res)
-
-  if (!session) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: '/api/auth/login',
-      },
-      props: {},
+    const session = getSession(req, res);
+  
+    if (!session) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: '/api/auth/login',
+        },
+        props: {},
+      };
     }
-  }
-
-  return {
-    props: {},
-  }
-}
+  
+    const user = await prisma.user.findUnique({
+      select: {
+        email: true,
+        role: true,
+      },
+      where: {
+        email: session.user.email,
+      },
+    });
+  
+    if (user.role !== 'ADMIN') {
+      return {
+        redirect: {
+          permanent: false,
+          destination: '/404',
+        },
+        props: {},
+      };
+    }
+  
+    return {
+      props: {},
+    };
+  };
